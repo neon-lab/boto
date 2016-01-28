@@ -39,7 +39,7 @@ class MTurkRequestError(EC2ResponseError):
 
 class MTurkConnection(AWSQueryConnection):
 
-    APIVersion = '2012-03-25'
+    APIVersion = '2014-08-15'
 
     def __init__(self, aws_access_key_id=None, aws_secret_access_key=None,
                  is_secure=True, port=None, proxy=None, proxy_port=None,
@@ -626,7 +626,8 @@ class MTurkConnection(AWSQueryConnection):
                                   answer_key_xml=None,
                                   test_duration=None,
                                   auto_granted=False,
-                                  auto_granted_value=1):
+                                  auto_granted_value=1,
+                                  is_requestable=False):
         """
         Create a new Qualification Type.
 
@@ -658,11 +659,14 @@ class MTurkConnection(AWSQueryConnection):
 
         auto_granted_value: auto_granted qualifications are given this value.
 
+        is_requestable: whether or not the worker can request this
+            qualification.
         """
 
         params = {'Name': name,
                   'Description': description,
                   'QualificationTypeStatus': status,
+                  'IsRequestable': is_requestable
                   }
         if retry_delay is not None:
             params['RetryDelayInSeconds'] = retry_delay
