@@ -55,7 +55,10 @@ class Requirement(object):
             "QualificationTypeId": self.qualification_type_id,
             "Comparator": self.comparator,
         }
-        if self.comparator != 'Exists' and self.integer_value is not None:
+        if self.comparator in ('In', 'NotIn'):
+            for i, integer_value in enumerate(self.integer_value, 1):
+                params['IntegerValue.%d' % i] = integer_value
+        elif self.comparator not in ('Exists', 'DoesNotExist') and self.integer_value is not None:
             params['IntegerValue'] = self.integer_value
         if self.required_to_preview:
             params['RequiredToPreview'] = "true"
@@ -112,7 +115,12 @@ class NumberHitsApprovedRequirement(Requirement):
 class LocaleRequirement(Requirement):
     """
     A Qualification requirement based on the Worker's location. The Worker's location is specified by the Worker to Mechanical Turk when the Worker creates his account.
+
+    If specifying a Country and Subdivision, use a tuple of valid  ISO 3166 country code and ISO 3166-2 subdivision code, e.g. ('US', 'CA') for the US State of California.
+
+    When using the 'In' and 'NotIn', locale should be a list of Countries and/or (Country, Subdivision) tuples.
     """
+
 
     def __init__(self, comparator, locale, required_to_preview=False):
         super(LocaleRequirement, self).__init__(qualification_type_id="00000000000000000071", comparator=comparator, integer_value=None, required_to_preview=required_to_preview)
@@ -122,8 +130,20 @@ class LocaleRequirement(Requirement):
         params =  {
             "QualificationTypeId": self.qualification_type_id,
             "Comparator": self.comparator,
-            'LocaleValue.Country': self.locale,
         }
+        if self.comparator in ('In', 'NotIn'):
+            for i, locale in enumerate(self.locale, 1):
+                if isinstance(locale, tuple):
+                    params['LocaleValue.%d.Country' % i] = locale[0]
+                    params['LocaleValue.%d.Subdivision' % i] = locale[1]
+                else:
+                    params['LocaleValue.%d.Country' % i] = locale
+        else:
+            if isinstance(self.locale, tuple):
+                params['LocaleValue.Country'] = self.locale[0]
+                params['LocaleValue.Subdivision'] = self.locale[1]
+            else:
+                params['LocaleValue.Country'] = self.locale
         if self.required_to_preview:
             params['RequiredToPreview'] = "true"
         return params
