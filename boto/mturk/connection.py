@@ -345,6 +345,28 @@ class MTurkConnection(AWSQueryConnection):
 
         return self._process_request('SearchHITs', params, [('HIT', HIT)])
 
+    def get_blocked_workers(self):
+        """
+        Returns all blocked workers, in the same manner as get_all_hits.
+        """
+        page_size = 100
+        search_rs = self._get_blocked_workers(page_size=page_size)
+        total_records = int(search_rs.TotalNumResults)
+        get_page_blocked = \
+            lambda page: self._get_blocked_workers(page_size=page_size, page_number=page)
+        page_nums = self._get_pages(page_size, total_records)
+        blocked_sets = itertools.imap(get_page_hits, page_nums)
+        return itertools.chain.from_iterable(blocked_sets)
+
+    def _get_blocked_workers(self, page_number=1, page_size=100):
+        """
+        Gets a page of blocked workers.
+        """
+        params = {'PageNumber': page_number,
+                  'PageSize': page_size}
+        return self._process_request('GetBlockedWorkers', params,
+            [('BlockWorker', BlockWorker)])
+
     def get_assignment(self, assignment_id, response_groups=None):
         """
         Retrieves an assignment using the assignment's ID. Requesters can only
@@ -933,6 +955,13 @@ class HIT(BaseAutoResultElement):
     # are we there yet?
     expired = property(_has_expired)
 
+
+class WorkerBlock(BaseAutoResultElement):
+    """
+    Class to extract a WorkerBlock structure from a response
+    """
+
+    pass
 
 class FileUploadURL(BaseAutoResultElement):
     """
